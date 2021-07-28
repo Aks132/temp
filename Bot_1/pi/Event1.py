@@ -8,9 +8,12 @@ GPIO.setwarnings(False)
 
 try:
     ser1 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.1)  # change name, if needed
-    ser2 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)
+
 except:
-    print("/dev/tty Port issue")
+    try:
+        ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)
+    except:
+        print("/dev/tty Port issue")
 
 Yaw = 0
 dist1 = 0
@@ -78,7 +81,7 @@ def calculate(speed, rotate, side):
     speedm3 = int(speed + rotate - side + outyaw - outSide + (speed * 0.0))
     speedm4 = int(speed - rotate + side - outyaw + outSide + (speed * 0.0))
     Speed = [speedm1, speedm2, speedm3, speedm4]
-    print(Speed)
+    #print(Speed)
     i = 0
     for spd in Speed:
         if abs(spd) > 99:
@@ -137,20 +140,15 @@ def fb():
 
 
 def getdata2():
-    resp = ser2.readline()
+    resp = ser1.readline().decode('utf-8').rstrip()
     print(resp)
 
 
 if __name__ == '__main__':
     while True:
-        getdata()
+        getdata2()
         message = "P1=" + str(P1) + "@" + "P2=" + str(P2) + "@" + "A1="
-        # ser1.write(message.encode('utf-8'))
-        time.sleep(0.01)
-        # getdata2()
-        # message = "P1="+str(P1)+"@" + "P2=" + str(P2) + "@"+"A1="
-        # ser2.write(message.encode('utf-8'))
-        # time.sleep(0.01)
+        ser1.write(message.encode('utf-8'))
 
         fb()
 
