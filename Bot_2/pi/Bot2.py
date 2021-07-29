@@ -76,10 +76,10 @@ def calculate(speed, rotate, side):
     # print(str(erroryaw) + " " + str(errordist1) + " " + str(errordist2))
     # print(str(int(outyaw)) + " " + str(int(speed)) + " " + str(int(rotate)))
 
-    speedm1 = int(speed + rotate + side + outyaw + outSide + (speed * 0.0))
-    speedm2 = int(speed - rotate - side - outyaw - outSide + (speed * 0.0))
-    speedm3 = int(speed + rotate - side + outyaw - outSide + (speed * 0.0))
-    speedm4 = int(speed - rotate + side - outyaw + outSide + (speed * 0.0))
+    speedm1 = int(speed + rotate + side) # + outyaw + outSide + (speed * 0.0))
+    speedm2 = int(speed - rotate - side)  #- outyaw - outSide + (speed * 0.0))
+    speedm3 = int(speed + rotate - side) #+ outyaw - outSide + (speed * 0.0))
+    speedm4 = int(speed - rotate + side) #- outyaw + outSide + (speed * 0.0))
     Speed = [speedm1, speedm2, speedm3, speedm4]
     #print(Speed)
     i = 0
@@ -110,17 +110,39 @@ def fb():
     speed = (jsVal['axis2']) * 70
     offsetyaw = (jsVal['axis3']) * 40
     side = (-(jsVal['axis5'] * 70) + (jsVal['axis6'] * 70)) / 2
-    P1 = jsVal['L1']
-    P2 = jsVal['R1']
+    P1 = jsVal['s']
+    P2 = jsVal['x']
 
-    if jsVal['x'] == 1 and P_Y != 2.5:
-        P_Y = 2.5
-        I_Y = 0.001
-        D_Y = 1
-        presetyaw = -Yaw
-        Yaw = 0
-        time.sleep(1)
 
+    # print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
+
+    calculate(speed, offsetyaw, side)
+
+
+def getdata2():
+    resp = ser1.readline().decode('utf-8').rstrip()
+    print(resp)
+
+def Com_Arduino():
+    getdata2()
+    message = "P1=" + str(P1) + "@" + "P2=" + str(P2) + "@" + "A1=0\r"
+    ser1.write(message.encode('utf-8'))
+
+
+if __name__ == '__main__':
+    while True:
+        fb()
+        Com_Arduino()
+
+
+    # try:
+
+    # except:
+    #   stop()
+    #  print("Exception Errrorrrrrrrrrrrrrrrrrrrrrrrrrr ")
+
+
+'''
     if jsVal['o'] == 1 or P1 == 1 or P2 == 1:
         P_Y = 0
         I_Y = 0
@@ -134,26 +156,12 @@ def fb():
         P_S = 0
         stop()
 
-    # print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
+    if jsVal['x'] == 1 and P_Y != 2.5:
+        P_Y = 2.5
+        I_Y = 0.001
+        D_Y = 1
+        presetyaw = -Yaw
+        Yaw = 0
+        time.sleep(1)
 
-    calculate(speed, offsetyaw, side)
-
-
-def getdata2():
-    resp = ser1.readline().decode('utf-8').rstrip()
-    print(resp)
-
-
-if __name__ == '__main__':
-    while True:
-        getdata2()
-        message = "P1=" + str(P1) + "@" + "P2=" + str(P2) + "@" + "A1="
-        ser1.write(message.encode('utf-8'))
-
-        fb()
-
-    # try:
-
-    # except:
-    #   stop()
-    #  print("Exception Errrorrrrrrrrrrrrrrrrrrrrrrrrrr ")
+'''
