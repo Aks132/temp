@@ -12,6 +12,20 @@ GPIO.setup(stepen, GPIO.OUT)
 GPIO.setup(steps, GPIO.OUT)
 GPIO.setup(stepdir, GPIO.OUT)
 
+step_list = [2123,-5238,3115,-6477,6477]
+def auto_step(number):
+    if(step_list[number] > 0):
+        GPIO.output(stepdir, GPIO.HIGH)
+    else:
+        GPIO.output(stepdir, GPIO.LOW)
+    for i in range(0, abs(step_list[number])):
+        GPIO.output(steps, GPIO.LOW)
+        time.sleep(0.0005)
+        GPIO.output(steps, GPIO.HIGH)
+        time.sleep(0.0005)
+
+
+
 def step_setup():
     GPIO.output(stepen, GPIO.HIGH)
     time.sleep(0.1)
@@ -20,18 +34,18 @@ def step_setup():
 def step_run(direction):
     if direction == 1:
         GPIO.output(stepdir, GPIO.HIGH)
-        for i in range(0,5):
-            GPIO.output(steps, GPIO.HIGH)
-            time.sleep(0.001)
+        for i in range(0,1):
             GPIO.output(steps, GPIO.LOW)
+            time.sleep(0.001)
+            GPIO.output(steps, GPIO.HIGH)
             time.sleep(0.001)
             #print(i)
         #GPIO.output(stepdir, GPIO.HIGH)
     elif direction == -1:
             GPIO.output(stepdir, GPIO.LOW)
-            for i in range(0,5):
-                GPIO.output(steps, GPIO.HIGH)
-                time.sleep(0.001)
+            for i in range(0,1):
                 GPIO.output(steps, GPIO.LOW)
+                time.sleep(0.001)
+                GPIO.output(steps, GPIO.HIGH)
                 time.sleep(0.001)
         

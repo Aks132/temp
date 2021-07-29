@@ -9,7 +9,7 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 GPIO.setup(26, GPIO.OUT)
-
+GPIO.setup(19, GPIO.OUT)
         
 
 
@@ -26,12 +26,11 @@ presetyaw = 0
 D_error =0 
 P1 = 0
 P2 = 0
-S = 0
 error_dist1 = 0
 reqdist1  = 60
 Bs_angle = 0
 
-PWM = [20 ,17 ,23 ,5]  
+PWM = [20 ,17 ,23 ,13]
 DIG = [21 , 27 , 24 , 6]
 
 for x in PWM:
@@ -61,10 +60,10 @@ def calculate(speed , rotate,side):
     #print(str(erroryaw) + " " + str(errordist1) + " " + str(errordist2))
     #print(str(int(outyaw)) + " " + str(int(speed)) + " " + str(int(rotate)))
     
-    speedm1 = int(speed + rotate + side + outyaw + outSide +(speed*0.0))
-    speedm2 = int(speed - rotate - side - outyaw - outSide +(speed*0.0))
-    speedm3 = int(speed + rotate - side + outyaw - outSide +(speed*0.0))
-    speedm4 = int(speed - rotate + side - outyaw + outSide +(speed*0.0))
+    speedm1 = int(speed + rotate + side )#+ outyaw + outSide +(speed*0.0))
+    speedm2 = int(speed - rotate - side )#- outyaw - outSide +(speed*0.0))
+    speedm3 = int(speed + rotate - side )#+ outyaw - outSide +(speed*0.0))
+    speedm4 = int(speed - rotate + side )#- outyaw + outSide +(speed*0.0))
     Speed = [speedm1 , speedm2 ,speedm3 ,speedm4]
 #    print(Speed)
     i = 0
@@ -107,18 +106,24 @@ def stop():
 
     
 def fb():
-    global offsetyaw , presetyaw, P_Y , Yaw ,  I_Y , I_Yaw ,D_Y,D_error,P1,P2,P_S, S,Bs_angle
+    global offsetyaw , presetyaw, P_Y , Yaw ,  I_Y , I_Yaw ,D_Y,D_error,P1,P2,P_S,Bs_angle,count
     jsVal = js.getJS()
     speed = (jsVal['axis2'])*70
     offsetyaw = -(jsVal['axis1'])*40
     side = (jsVal['axis3']*70)
-    S = jsVal['t']
     P1 = jsVal['L1']
     P2 = jsVal['R1']
     
     B_S = -jsVal['x'] + jsVal['s']
     Bs_angle = Bs_angle + B_S
     stp.step_run(B_S)
+
+    if jsVal['R2'] == 1 :
+        stp.auto_step(count)
+        count = count + 1
+        if count > 3:
+            count = 0
+
      
     print(str(Bs_angle)+" stpper "+str(B_S))
     B_S = 0
@@ -127,20 +132,29 @@ def fb():
 
     
 def arduino_fire():
-    if(S == 1):
+    jsVal = js.getJS()
+    if(jsVal['t'] == 1):
         print("shotinnnnng")
         GPIO.output(26,GPIO.HIGH)
     else:
         GPIO.output(26,GPIO.LOW)
+    if (jsVal['o'] == 1):
+        print("shotinnnnng")
+        GPIO.output(19, GPIO.HIGH)
+    else:
+       GPIO.output(19, GPIO.LOW)
         
 
 if __name__ == '__main__':
     stp.step_setup()
     
     while True:
+
         arduino_fire()
         arduino_out()
         fb()
+        jsVal = js.getJS()
+      
   
        # try:
           
@@ -195,4 +209,3 @@ if __name__ == '__main__':
    
 
 
-u
