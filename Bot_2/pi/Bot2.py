@@ -1,87 +1,37 @@
-import serial
-import time
 import RPi.GPIO as GPIO
 import joy as js
+import Com_Arduino
+import Auto_mode
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-try:
-    ser1 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.1)  # change name, if needed
-
-except:
-    try:
-        ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)
-    except:
-        print("/dev/tty Port issue")
-
-Yaw = 0
-dist1 = 0
-P_S = 0.0  # 0.3
-P_Y = 0
-D_F = 0
-D_Y = 0
-I_Yaw = 0
-I_Y = 0
-offsetyaw = 0
-presetyaw = 0
-D_error = 0
-P1 = 0
-P2 = 0
-error_dist1 = 0
-reqdist1 = 60
-
 PWM = [20, 17, 23, 5]
 DIG = [21, 27, 24, 6]
-
-for x in PWM:
-    GPIO.setup(x, GPIO.OUT)  # set pin as output
-for x in DIG:
-    GPIO.setup(x, GPIO.OUT)  # set pin as output
-p = []
-for i in range(0, 4):
-    p.append(GPIO.PWM(PWM[i], 100))  # set pwm for M1
+Soft_PWM = []
+speed = 0
+offsetyaw = 0
+side = 0
 
 
-def getdata():
-    global Yaw, dist1
-    l = [0, 0, 0]
-    try:
-
-        response = ser1.readline().decode('utf-8').rstrip()
-        print(response)
-        l = str(response).split('@')  ##@Yaw@dist1@dist2@##
-        if len(l) == 4 and len(response) > 12:
-            Yaw = float(l[1]) + offsetyaw + presetyaw
-            dist1 = float(l[2])
-            print('Yaw ' + str(Yaw) + ' dist1 ' + str(dist1))
-    except:
-        print("Yaw error")
-        Yaw = 0
+def motor_setup():
+    for x in DIG:
+        GPIO.setup(x, GPIO.OUT)  # set pin as output
+    for y in range(0, 4):
+        Soft_PWM.append(GPIO.PWM(PWM[y], 300))  # set pwm frequenvy for M1
+    for z in Soft_PWM:
+        z.start(0)  # set pin as output
 
 
-def calculate(speed, rotate, side):
-    global errordist1, I_Y, I_Yaw, D_Yaw, D_error, error_dist1
-
-    error_dist1 = (reqdist1 - dist1)
-    erroryaw = Yaw
-    I_Yaw += I_Yaw * I_Y
-    D_Yaw = (D_error - Yaw)
-    D_error = Yaw
-    outyaw = P_Y * (Yaw) + I_Yaw + D_Yaw
-
-    outSide = error_dist1 * P_S
-
-    # print(outyaw)
-    # print(str(erroryaw) + " " + str(errordist1) + " " + str(errordist2))
+def motor_feed(speed, rotate, side):
     # print(str(int(outyaw)) + " " + str(int(speed)) + " " + str(int(rotate)))
 
-    speedm1 = int(speed + rotate + side) # + outyaw + outSide + (speed * 0.0))
-    speedm2 = int(speed - rotate - side)  #- outyaw - outSide + (speed * 0.0))
-    speedm3 = int(speed + rotate - side) #+ outyaw - outSide + (speed * 0.0))
-    speedm4 = int(speed - rotate + side) #- outyaw + outSide + (speed * 0.0))
+    speedm1 = int(speed + rotate + side)  # + outyaw + outSide + (speed * 0.0))
+    speedm2 = int(speed - rotate - side)  # - outyaw - outSide + (speed * 0.0))
+    speedm3 = int(speed + rotate - side)  # + outyaw - outSide + (speed * 0.0))
+    speedm4 = int(speed - rotate + side)  # - outyaw + outSide + (speed * 0.0))
     Speed = [speedm1, speedm2, speedm3, speedm4]
-    #print(Speed)
+    # print(Speed)
     i = 0
     for spd in Speed:
         if abs(spd) > 99:
@@ -89,11 +39,11 @@ def calculate(speed, rotate, side):
         if spd > 0:
             # print(i)
             GPIO.output(DIG[i], GPIO.HIGH)
-            p[i].start(abs(spd))
+            Soft_PWM[i].ChangeDutyCycle(abs(spd))
             # sleep(0.05)
         else:
             GPIO.output(DIG[i], GPIO.LOW)
-            p[i].start(abs(spd))
+            Soft_PWM[i].ChangeDutyCycle(abs(spd))
             # sleep(0.05)
         i = i + 1
 
@@ -101,38 +51,25 @@ def calculate(speed, rotate, side):
 def stop():
     for i in range(0, 4):
         GPIO.output(DIG[i], GPIO.LOW)
-        p[i].start(abs(0))
+        Soft_PWM[i].stop()
 
 
-def fb():
-    global offsetyaw, presetyaw, P_Y, Yaw, I_Y, I_Yaw, D_Y, D_error, P1, P2, P_S
+def get_input():
+    global speed, offsetyaw, side
     jsVal = js.getJS()
     speed = (jsVal['axis2']) * 70
     offsetyaw = (jsVal['axis3']) * 40
     side = (-(jsVal['axis5'] * 70) + (jsVal['axis6'] * 70)) / 2
-    P1 = jsVal['s']
-    P2 = jsVal['x']
-
 
     # print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
 
-    calculate(speed, offsetyaw, side)
-
-
-def getdata2():
-    resp = ser1.readline().decode('utf-8').rstrip()
-    print(resp)
-
-def Com_Arduino():
-    getdata2()
-    message = "P1=" + str(P1) + "@" + "P2=" + str(P2) + "@" + "A1=0\r"
-    ser1.write(message.encode('utf-8'))
-
 
 if __name__ == '__main__':
+    motor_setup()
     while True:
-        fb()
+        get_input()
         Com_Arduino()
+        motor_feed(speed, offsetyaw, side)
 
 
     # try:
@@ -140,7 +77,6 @@ if __name__ == '__main__':
     # except:
     #   stop()
     #  print("Exception Errrorrrrrrrrrrrrrrrrrrrrrrrrrr ")
-
 
 '''
     if jsVal['o'] == 1 or P1 == 1 or P2 == 1:
