@@ -6,14 +6,15 @@ import time
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-reqdist1 = 60
-reqdist2 = 50
+req_side = 60
+req_front = 50
 
 PWM = [20, 17, 23, 5]
 DIG = [21, 27, 24, 6]
 Soft_PWM = []
 speed = 0
 offsetyaw = 0
+presetyaw = 0
 side = 0
 
 # ----------------------------------------------------
@@ -26,9 +27,9 @@ P_Y = 0
 P_F = 0
 
 D_F = 0
-D_Side = 0
-D_Front = 0
+D_S = 0
 D_Y = 0
+
 
 I_Yaw = 0
 I_Y = 0
@@ -37,16 +38,12 @@ I_F = 0
 I_Side = 0
 I_S = 0
 
-offsetyaw = 0
-presetyaw = 0
-
 D_error = 0
 DF_error = 0
 DS_error = 0
 
 try:
     ser1 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.1)  # change name, if needed
-
 except:
     try:
         ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)
@@ -60,11 +57,11 @@ def Com_Arduino():
 
         response = ser1.readline().decode('utf-8').rstrip()
         print(response)
-        l = str(response).split('@')  ##@Yaw@frontdist@sidedist@##
-        if len(l) <= 4 and len(response) > 12:
-            Yaw = float(l[1]) + offsetyaw + presetyaw
-            frontdist = float(l[2])
-            sidedist = float(l[3])
+        data = str(response).split('@')  ##@Yaw@frontdist@sidedist@##
+        if len(data) <= 4 and len(response) > 12:
+            Yaw = float(data[1]) + offsetyaw + presetyaw
+            frontdist = float(data[2])
+            sidedist = float(data[3])
             print('Yaw ' + str(Yaw) + ' frontdist ' + str(frontdist)) + ' frontdist ' + str(sidedist)
     except:
         print("Yaw error")
@@ -85,7 +82,8 @@ def motor_setup():
 
 
 def motor_feed(speed, rotate, side):
-    global I_Y, I_Yaw, D_Yaw, D_error, D_Y, presetyaw, P_F, Yaw, reqdist2, I_Front, I_F, I_S, I_Side, DF_error, DS_error, D_F, D_Front, D_Side
+    global I_Y, I_Yaw, D_error, D_Y, presetyaw, P_F, Yaw, req_front, I_Front, I_F, I_S, I_Side
+    global DF_error, DS_error, D_F, P_F, P_Y, P_S
     jsVal = js.getJS()
 
     if jsVal['o'] == 1:
@@ -115,21 +113,19 @@ def motor_feed(speed, rotate, side):
     outyaw = P_Y * (Yaw) + I_Yaw + D_Yaw
 
     # Side
-    error_dist1 = (reqdist1 - frontdist).P_S
+    error_dist1 = (req_side - sidedist)*P_S
     I_Side += I_Side * I_S
-    D_Side = (D_error - frontdist)
+    D_Side = (DS_error - sidedist)
     DS_error = sidedist
     outfront = 0  # error_dist1+I_Front+D_Front
 
     # Front
-    error_dist2 = (reqdist2 - sidedist)
+    error_dist2 = (req_front - frontdist)*P_F
     I_Front += I_Front * I_F
-    D_Front = (D_error - sidedist)
+    D_Front = (DF_error - frontdist)
     DF_error = frontdist
-    outside = 0  # error_dist2+I_Side+D_Side
+    outSide = 0  # error_dist2+I_Side+D_Side
 
-    outSide = error_dist1 * P_S
-    outFront = error_dist2 * P_F
     # print(str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(rotate)))
 
     speedm1 = int(speed + rotate + side + outyaw + outSide + outfront + (speed * 0.0))
