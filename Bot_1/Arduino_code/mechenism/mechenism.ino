@@ -2,6 +2,7 @@ int stepen[5] =  {23, 29, 35, 41, 47};
 int steps[5] =   {25, 31, 37, 43, 49};
 int stepdir[5] = {27, 33, 39, 45, 51};
 
+
 int shootcount = 0;
 int stepcount[5] = {1800, -1000, -1200, 1700, 1600};
 int stepcount_2[5] = {-1800, 1000, 1200, -1700, 1600};
@@ -13,7 +14,7 @@ char command = 0;
 int count = 0;
 int bc = 0;
 
-const int RELAY_PIN[5] = {22, 24, 26, 28, 30};
+
 
 
 long lastTime = millis();

@@ -11,10 +11,19 @@ GPIO.setwarnings(False)
 GPIO.setup(26, GPIO.OUT)
 GPIO.setup(19, GPIO.OUT)
         
+try:
+    ser1 = serial.Serial('/dev/ttyACM0', 9600, timeout = 0.1) # change name, if needed
+except:
+    try:
+        ser1 = serial.Serial('/dev/ttyACM1', 115200, timeout = 0.1)
+    except:
+        print("/dev/tty Port issue")
+
 
 
 Yaw = 0
 dist1 = 0
+dist2 = 0
 P_S = 0.0 #0.3
 P_Y = 0
 D_F = 0
@@ -45,7 +54,7 @@ for i in range(0,4):
         
     
 def calculate(speed , rotate,side):
-    global errordist1 , I_Y , I_Yaw , D_Yaw , D_error,error_dist1
+    global errordist1 , I_Y , I_Yaw , D_Yaw , D_error,error_dist1,dist1,dist2
 
     error_dist1 = (reqdist1 -dist1)
     erroryaw = Yaw
@@ -60,10 +69,10 @@ def calculate(speed , rotate,side):
     #print(str(erroryaw) + " " + str(errordist1) + " " + str(errordist2))
     #print(str(int(outyaw)) + " " + str(int(speed)) + " " + str(int(rotate)))
     
-    speedm1 = int(speed + rotate + side )#+ outyaw + outSide +(speed*0.0))
-    speedm2 = int(speed - rotate - side )#- outyaw - outSide +(speed*0.0))
-    speedm3 = int(speed + rotate - side )#+ outyaw - outSide +(speed*0.0))
-    speedm4 = int(speed - rotate + side )#- outyaw + outSide +(speed*0.0))
+    speedm1 = int(speed + rotate + side + outyaw + outSide +(speed*0.0))
+    speedm2 = int(speed - rotate - side - outyaw - outSide +(speed*0.0))
+    speedm3 = int(speed + rotate - side + outyaw - outSide +(speed*0.0))
+    speedm4 = int(speed - rotate + side - outyaw + outSide +(speed*0.0))
     Speed = [speedm1 , speedm2 ,speedm3 ,speedm4]
 #    print(Speed)
     i = 0
@@ -104,7 +113,24 @@ def stop():
         p[i].start(abs(0))
 
 
-    
+def getdata():
+     global Yaw , dist1
+     l = [0,0,0]
+     try:
+
+         response = ser1.readline().decode('utf-8').rstrip()
+         print(response)
+         l = str(response).split('@') ##@Yaw@dist1@dist2@##
+         if len(l) == 5 and len(response) > 12:
+             Yaw = float(l[1]) + offsetyaw + presetyaw
+             dist1 = float(l[2])
+             dist2 = float(l[3])
+             print('Yaw '+str(Yaw)+' dist1 '+str(dist1)+' dist2 '+str(dist2))
+     except:
+         print("Yaw error")
+         Yaw = 0
+
+
 def fb():
     global offsetyaw , presetyaw, P_Y , Yaw ,  I_Y , I_Yaw ,D_Y,D_error,P1,P2,P_S,Bs_angle,count
     jsVal = js.getJS()
@@ -113,11 +139,8 @@ def fb():
     side = (jsVal['axis3']*70)
     P1 = jsVal['L1']
     P2 = jsVal['R1']
-    
-    B_S = -jsVal['x'] + jsVal['s']
-    Bs_angle = Bs_angle + B_S
-    stp.step_run(B_S)
-
+    calculate(speed, offsetyaw, side)
+'''
     if jsVal['R2'] == 1 :
         stp.auto_step(count)
         count = count + 1
@@ -128,7 +151,8 @@ def fb():
     print(str(Bs_angle)+" stpper "+str(B_S))
     B_S = 0
     #print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))    
-    calculate(speed , offsetyaw, side)
+    '''
+
 
     
 def arduino_fire():
@@ -152,6 +176,7 @@ if __name__ == '__main__':
 
         arduino_fire()
         arduino_out()
+        getdata()
         fb()
         jsVal = js.getJS()
       
@@ -165,15 +190,7 @@ if __name__ == '__main__':
 
 #-----------------------stash----------------------------------------------------------------
 # 
-# try:
-#     ser1 = serial.Serial('/dev/ttyACM0', 9600, timeout = 0.1) # change name, if needed
-# 
-# except:
-#     try:
-#         ser1 = serial.Serial('/dev/ttyACM1', 115200, timeout = 0.1)
-#     except:
-#         print("/dev/tty Port issue")
-#     
+
 #     if (jsVal['x'] == 1 and P_Y != 2.5):
 #        P_Y = 2.5
 #        I_Y =  0.001
@@ -188,24 +205,7 @@ if __name__ == '__main__':
 #         I_Yaw =  0
 #         D_Y = 0
 #         D_error = 0
-#         
-#    
-# 
-# def getdata():
-#     global Yaw , dist1
-#     l = [0,0,0]
-#     try:
-#   
-#         response = ser1.readline().decode('utf-8').rstrip()
-#         print(response)
-#         l = str(response).split('@') ##@Yaw@dist1@dist2@##
-#         if len(l) == 4 and len(response) > 12:
-#             Yaw = float(l[1]) + offsetyaw + presetyaw
-#             dist1 = float(l[2]) 
-#             print('Yaw '+str(Yaw))
-#     except:
-#         print("Yaw error")
-#         Yaw = 0
+
    
 
 
