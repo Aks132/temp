@@ -6,7 +6,7 @@ import time
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-reqfront = 30
+reqfront = 150
 reqside = 176
 
 Poddistlist = [(145),(310),(380),(545)]
@@ -53,11 +53,15 @@ DF_error = 0
 DS_error = 0
 
 try:
-    ser1 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.01)  # change name, if needed
-
+   # ser2 = serial.Serial('/dev/ttyACM0', 9600, timeout=0.01)
+    ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)  # change name, if needed
+    ser1.flush()
+    ser2 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.01)
+    ser2.flush()
 except:
     try:
-        ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)
+        ser1 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.01)
+
     except:
         print("/dev/tty Port issue")
 
@@ -67,19 +71,18 @@ def Com_Arduino():
     #try:
 
     response = ser1.readline().decode('utf-8').rstrip()
-   # print(response)
+    #print(response)
         
     l = str(response).split('@')  ##@Yaw@frontdist@sidedist@##
   #  print(len(l))
-    if len(l) >= 4 and len(response) > 12:
+    if len(l) >= 4 and len(response) > 30:
         Yaw = float(l[1]) + offsetyaw + presetyaw
         frontdist = float(l[3])
-        
         sidedist = float(l[2])
-        sidedist2= float(l[4])
+        sidedist2 = float(l[4])
         ang_err = sidedist-sidedist2 
         #print(sidedist)
-        print('Yaw ' + str(int(Yaw))+" " +str(presetyaw)+ ' frontdist ' + str(frontdist) + ' sidedist ' + str(sidedist)+ 'sidedist2 ' + str(sidedist2))
+        print('Yaw ' + str(int(Yaw))+" " +str(presetyaw)+ ' frontdist ' + str(frontdist) + ' sidedist ' + str(sidedist)+ ' sidedist2 ' + str(sidedist2))
     #except:
        # print("Yaw error")
 
@@ -175,7 +178,7 @@ def motor_feed(speed, rotate, side):
     #print(outSide)
   
 
-    print(str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
+    #print(str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
     speedm1 = int(speed + rotate + side + outyaw + outSide + outfront + (speed * 0.0))
     speedm2 = int(speed - rotate - side - outyaw - outSide + outfront + (speed * 0.0))
     speedm3 = int(speed + rotate - side + outyaw - outSide + outfront + (speed * 0.0))
@@ -213,14 +216,19 @@ def get_input():
     
         
 
-    print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
+    #print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
 
+def Com_Arduino_2():
+
+    response = ser2.readline().decode('utf-8').rstrip()
+    print(response)
 
 if __name__ == '__main__':
     motor_setup()
     while True:
         get_input()
         Com_Arduino()
+        Com_Arduino_2()
         motor_feed(speed, offsetyaw, side)
         time.sleep(0.001)
 
