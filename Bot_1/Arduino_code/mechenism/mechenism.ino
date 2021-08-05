@@ -1,7 +1,17 @@
+
+float YAW,YAWfilter;
+float offset_yaw = 0;
+float I_YAW = 0; 
+boolean mpusetup = false;
+float dist1,dist2,dist3;
+String data = "Hello";
+
 int stepen[5] =  {23, 29, 35, 41, 47};
 int steps[5] =   {25, 31, 37, 43, 49};
 int stepdir[5] = {27, 33, 39, 45, 51};
 
+
+const int RELAY_PIN[5] = {22, 24, 26, 28, 30};
 
 int shootcount = 0;
 int stepcount[5] = {1800, -1000, -1200, 1700, 1600};
@@ -22,6 +32,8 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println("Ready ");
+    //mpu_setup();
+  Lidarsetup();
   //Serial.setTimeout(20);
   pinMode(34, INPUT);
   pinMode(12, INPUT);
@@ -134,12 +146,36 @@ void jhonson_set(int Si)
     }
   }
 }
+
+
+void delayread(int halt)
+{
+long  start = millis();
+while(halt >= millis()-start)
+{   //motion_sense();  
+    getlidardata();
+    //motion_sense(); 
+    getlidardata2(); 
+    //motion_sense(); 
+    getlidardata3();
+    if(Serial.available())
+    { data = Serial.readStringUntil("/n"); 
+     Serial.println("##@" + String(YAWfilter)+"@" +String(dist1)+"@"+String(dist2)+"@"+String(dist3)+"@##ok");
+    }
+     Serial.println("##@" + String(YAWfilter)+"@" +String(dist1)+"@"+String(dist2)+"@"+String(dist3)+"@##");
+      
+    
+}
+
+}
+
 void loop() {
   //Serial.println(digitalRead(32));
   //Serial.println(shootcount);
 //Serial.println(String(digitalRead(12))+" " + String(digitalRead(32))+" "+String(shootcount));
+delayread(100);
 
-
+/*
  if (bc == 1 && digitalRead(12) == 1)
   { Serial.println("YO MF I M DONE!!!! ");
     stepperset(0);
@@ -169,5 +205,5 @@ void loop() {
     bc = 1;
     shootcount = 0;
   }
-
+*/
 }
