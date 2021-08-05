@@ -1,7 +1,10 @@
 import RPi.GPIO as GPIO
 import joy as js
 import serial
-import time
+from time import sleep
+from multiprocessing import Process
+
+
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
@@ -126,7 +129,7 @@ def motor_feed(speed, rotate, side):
    
         presetyaw = -Yaw
         Yaw = 0
-        time.sleep(0.1)
+        sleep(0.1)
 
     if jsVal['s'] == 1:
         P_F = 0.3 #0
@@ -148,7 +151,7 @@ def motor_feed(speed, rotate, side):
     
     
     if(jsVal['R1'] == 1 ):
-        time.sleep(0.1)
+        sleep(0.1)
         jsVal = js.getJS()
         if(jsVal['R1'] == 1 ):
            
@@ -230,24 +233,27 @@ def get_input():
 
     #print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
 
-def Com_Arduino_2():
 
-    response = ser2.readline().decode('utf-8').rstrip()
-    print(response)
+
 
 if __name__ == '__main__':
     motor_setup()
+
+
     while True:
+
         get_input()
-        #Com_Arduino_2()
+
         Com_Arduino()
         motor_feed(speed, offsetyaw, side)
+
+
 
 '''       try:
             get_input()
             Com_Arduino()
             motor_feed(speed, offsetyaw, side)
-            time.sleep(0.001)
+            sleep(0.001)
         except:
             #stop()
             print("Exception Errrorrrrrrrrrrrrrrrrrrrrrrrrrr ")
