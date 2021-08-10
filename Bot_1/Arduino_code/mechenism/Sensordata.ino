@@ -117,7 +117,7 @@ void getlidardata3(){
     int16_t tfTemp = 0;    // Internal temperature of Lidar sensor chip
     if( tfmP3.getData( tfDist, tfFlux, tfTemp)) // Get data from the device.
     {
-      dist3 = 0.4*int(tfDist) + 0.6*dist1;   // display distance,
+      dist3 = 0.4*int(tfDist) + 0.6*dist3;   // display distance,
     }
     }
 void motion_sense(){
