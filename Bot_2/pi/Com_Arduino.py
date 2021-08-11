@@ -10,10 +10,10 @@ except:
     except:
         print("/dev/tty Port issue")
 
-def Com_Arduino():
-    getdata2()
-    message = "P1=" + str(0) + "@" + "P2=" + str(0) + "@" + "A1=0\r"
-    ser1.write(message.encode('utf-8'))
+def Com_arduino():
+    getdata_com1(ser1)
+    #message = "P1=" + str(0) + "@" + "P2=" + str(0) + "@" + "A1=0\r"
+    #ser1.write(message.encode('utf-8'))
 
 
 
@@ -29,14 +29,17 @@ def getdata_com1(ser1):
     global Yaw, dist1
     l = [0, 0, 0]
     try:
-
         response = ser1.readline().decode('utf-8').rstrip()
-        print(response)
+        #print(response)
+
         l = str(response).split('@')  ##@Yaw@dist1@dist2@##
-        if len(l) == 4 and len(response) > 12:
-            Yaw = float(l[1]) + offsetyaw + presetyaw
+        #print(len(l))
+        #print(l)
+        if len(l) == 5 and len(response) > 12:
+            Yaw = float(l[1])
             dist1 = float(l[2])
-            print('Yaw ' + str(Yaw) + ' dist1 ' + str(dist1))
+            dist2 = float(l[3])
+            #print('Yaw ' + str(Yaw) + ' dist1 ' + str(dist1)+' dist2 '+str(dist2))
     except:
         print("Yaw error")
         Yaw = 0
