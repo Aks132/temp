@@ -41,3 +41,19 @@ void control_stepper(int x , char y){
   }
 
 }
+int sort_desc(const void *cmp1, const void *cmp2)
+{
+  // Need to cast the void * to int *
+  int a = *((int *)cmp1);
+  int b = *((int *)cmp2);
+  // The comparison
+  return a > b ? -1 : (a < b ? 1 : 0);
+  // A simpler, probably faster way:
+  //return b - a;
+}
+
+void IR_Sensor(){
+  
+  
+  
+  }

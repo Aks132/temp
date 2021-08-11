@@ -18,7 +18,8 @@ int stepcount[5] = {1000, 1000, 1000, 1000, 1000};
 int stepcount_2[5] = { -1800, 1000, 1200, -1700, 1600};
 int DIR[5] = {3, 5, 7, 9, 11};
 int PWM[5] = {2, 4, 6, 8, 10};
-int Timehalt[5] = {8500, 10500, 7500, 8000, 8500}; // mm per 100ms {3.6 , 3.15,5.55,5.1,5.1}
+int Timehalt[5] = {9500, 11500, 8500, 9000, 9550}; // mm per 100ms {3.6 , 3.15,5.55,5.1,5.1}
+int Timehalt_r[5] =  {9500,11500,8500,9000,9550};// {1,4,0,3,2}
 
 char command = 0;
 int count = 0;
@@ -60,6 +61,8 @@ void setup() {
   delay(100);
   digitalWrite(stepen, LOW);
   shootcount = 4;
+int t_length = sizeof(Timehalt) / sizeof(Timehalt[0]);
+  qsort(Timehalt, t_length, sizeof(Timehalt[0]), sort_desc);
 
 }
 
@@ -133,15 +136,26 @@ void shoot(int x)
 
 void jhonson_set(int Si)
 {
-  if (Si == 1) {
-    //int srt = millis();
-    //while(millis()-srt <= 9200)
-    for (int yt = 0 ; yt <= 4; yt++) {
+  if (Si == 1) {long start = millis();
+ for (int yt = 0 ; yt <= 4; yt++) {
       digitalWrite(DIR[yt], LOW);
       analogWrite(PWM[yt], 255);
-      delay(Timehalt[yt]);
-      analogWrite(PWM[yt], 0);
     }
+    
+  for(int t = 4; t>=0; t--){
+  while(millis()-start < Timehalt[t])
+  {delayread(50);  
+  }
+  
+  int ix = 0;
+  while(Timehalt_r[ix] != Timehalt[t])
+  {ix++;}
+  Serial.println(String(ix)+"  "+String(millis()-start));
+  //stop ix motor
+  digitalWrite(DIR[ix], LOW);
+  analogWrite(PWM[ix], 0);
+  
+  }
   }
   else if (Si == 0)
   {

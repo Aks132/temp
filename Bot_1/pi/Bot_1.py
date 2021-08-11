@@ -21,6 +21,9 @@ offsetyaw = 0
 side = 0
 countpod = 0
 
+GPIO.setup(14,GPIO.IN)
+ir_1 = 0
+
 # ----------------------------------------------------
 Yaw = 0
 frontdist = 0
@@ -79,8 +82,10 @@ def Com_Arduino():
                 x = 2
             if y == -1:
                 y = 2
-            
-            message = str((jsVal['options']))+str((jsVal['R2']))+str(x)+str(y) +"\n"
+            if GPIO.input(14)==False:
+                print('hello')
+                ir_1 = 1
+            message = str((jsVal['options']))+str((jsVal['R2']))+str(x)+str(y) + str(ir_1) + +"\n"
             #print(message)
             ser1.write(message.encode('utf-8'))
             
@@ -130,9 +135,9 @@ def motor_feed(speed, rotate, side):
     if jsVal['x'] == 1 and P_Y != 0.8:
         print("Yaw correction start")
         P_ER = 2 #1.5
-        D_Y = 1 #4
-        
+        D_Y = 1 #4    
         I_A = 0.0002 #0.0002
+        
         #I_Y = 0.001
 
         P_Y = 0.8
@@ -204,7 +209,7 @@ def motor_feed(speed, rotate, side):
     
 #    outSide = 0
     #print(str(int(outyaw))+"  "+str(int(ang_err)))
-  
+    print(str(int(outyaw))+"  "+str(int(ang_err)))
 
    # print(" " +str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
     speedm1 = int(speed + rotate + side - outyaw + outSide + outfront + (speed * 0.0))
