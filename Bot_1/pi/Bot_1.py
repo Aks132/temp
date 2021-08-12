@@ -236,12 +236,9 @@ def Process1(arr):
 
     motor_setup()
     while True:
-        get_input()
-        Com_Arduino(ser1, arr)
-        motor_feed(speed, offsetyaw, side)
         try:
             get_input()
-            Com_Arduino()
+            Com_Arduino(ser1, arr)
             motor_feed(speed, offsetyaw, side)
             sleep(0.001)
         except:
