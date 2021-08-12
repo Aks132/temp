@@ -1,8 +1,7 @@
-
+#include <Arduino.h>
 float YAW, YAWfilter;
 float offset_yaw = 0;
 float I_YAW = 0;
-boolean mpusetup = false;
 float dist1, dist2, dist3;
 String data = "Hello";
 
@@ -26,6 +25,7 @@ int count = 0;
 int bc = 0;
 char fire = '0';
 char set = '0';
+char ir = '0';
 
 int mode = 1;
 int count_no = 0;
@@ -37,9 +37,9 @@ long lastTime = millis();
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+
   Serial.setTimeout(20);
   Serial.println("Ready ");
-  //mpu_setup();
   Lidarsetup();
   pinMode(34, INPUT);
   pinMode(12, INPUT);
@@ -133,6 +133,16 @@ void shoot(int x)
   delayread(1000);
 }
 
+void jhonson_ir_set()
+{ digitalWrite(DIR[4], LOW);
+   analogWrite(PWM[4], 255);
+  while(ir != '1'){
+    delayread(50);
+  }
+  digitalWrite(DIR[4], HIGH);
+  analogWrite(PWM[4], 0);
+  
+  }
 
 void jhonson_set(int Si)
 {
@@ -184,6 +194,10 @@ void delayread(int halt)
       char x = '0';
        x = char(data[2]);
       st = char(data[3]);
+      ir = char(data[4]);
+
+
+
       
       if (x == '1' && (millis()-start_count_data) >= 300) {
       start_count_data = millis();
@@ -206,7 +220,7 @@ void delayread(int halt)
    
 
 
-    Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##" + String(count_no) + String(st) + String(mode));
+    Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##" + String(count_no) + String(st) + String(mode) +" "+ String(ir));
     }
     else {
       Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##");
@@ -240,7 +254,7 @@ void loop() {
 
 
   */
-
+  
   if(mode == 0)
   {control_stepper(count_no , st);
     }
@@ -252,7 +266,7 @@ void loop() {
   if (set == '1')
   { Serial.println("YO MF I M DONE!!!! ");
     //stepperset(1);
-    jhonson_set(1);
+    jhonson_ir_set();
   }
 
   if (fire == '1' && shootcount >= 0)

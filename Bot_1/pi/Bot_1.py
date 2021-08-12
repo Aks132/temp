@@ -5,13 +5,18 @@ from time import sleep
 from multiprocessing import Process
 
 
+
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-reqfront = 50
-reqside = 25
+
+
+
+reqfront = 640
+reqside = 80
 #Poddistlist = [50,(145 + 5 - 44),(145 + 5 - 24),(145 + 5),(145 + 5 + 24),(145 + 5 + 44)] #70 - 45 = 25
-Poddistlist = [50,(177),(145),(137),(117),97] #70 - 45 = 25
+Poddistlist = [640,(640),(445),(640),(640),640] #70 - 45 = 25
+Podlistside= [80,53,53,80,53,53]
 pos = 1
 PWM = [20, 17, 23, 13]
 DIG = [21, 27, 24, 6]
@@ -23,6 +28,13 @@ countpod = 0
 
 GPIO.setup(14,GPIO.IN)
 ir_1 = 0
+
+
+GPIO.setup(2,GPIO.OUT)
+GPIO.setup(3,GPIO.OUT)
+
+GPIO.output(2,GPIO.LOW)
+GPIO.output(3,GPIO.LOW)
 
 # ----------------------------------------------------
 Yaw = 0
@@ -66,9 +78,24 @@ try:
 except:
     print("/dev/tty Port issue")
 
+def arduino_out():
+    jsVal = js.getJS()
+    if jsVal['R1'] == 1:
+        print("i am in phase 1")
+        GPIO.output(2,GPIO.HIGH)
+    elif jsVal['R1'] == 0:
+        GPIO.output(2,GPIO.LOW)
+
+    if jsVal['L1'] == 1:
+        print("i am in phase 2")
+        GPIO.output(3,GPIO.HIGH)
+    elif jsVal['L1'] == 0:
+        GPIO.output(3,GPIO.LOW)
 
 def Com_Arduino():
     global Yaw, frontdist, sidedist,sidedist2,ang_err
+         
+
     try:
         if ser1.in_waiting > 0:
             response = ser1.readline().decode('utf-8').rstrip()
@@ -82,10 +109,11 @@ def Com_Arduino():
                 x = 2
             if y == -1:
                 y = 2
-            if GPIO.input(14)==False:
-                print('hello')
+            ir_1 = 0   
+            if(ir_read()==1):
+            #    print('hello')
                 ir_1 = 1
-            message = str((jsVal['options']))+str((jsVal['R2']))+str(x)+str(y) + str(ir_1) + +"\n"
+            message = str((jsVal['options']))+str((jsVal['R2']))+str(x)+str(y)+str(ir_1) + "\n"
             #print(message)
             ser1.write(message.encode('utf-8'))
             
@@ -95,7 +123,7 @@ def Com_Arduino():
                 sidedist = float(l[4])
                 sidedist2 = float(l[2])
                 if(sidedist-sidedist2 < 30):
-                    ang_err = -(sidedist-sidedist2) -3
+                    ang_err = -(sidedist-sidedist2) 
                # print(int(ang_err))
                # print('Yaw ' + str(int(Yaw))+" " +str(presetyaw)+ ' frontdist ' + str(frontdist) + ' sidedist ' + str(sidedist)+ ' sidedist2 ' + str(sidedist2))
 
@@ -166,12 +194,13 @@ def motor_feed(speed, rotate, side):
         D_S = 0
     
     
-    if(jsVal['R1'] == 1 ):
+    if(jsVal['L2'] == 1 ):
         sleep(0.2)
         jsVal = js.getJS()
-        if(jsVal['R1'] == 1 ):
+        if(jsVal['L2'] == 1 ):
            
             reqfront = Poddistlist[countpod]
+            reqside = Podlistside[countpod]
             countpod += pos
             print(countpod)
             if abs(countpod) >=6  or countpod <= 0 :
@@ -209,7 +238,7 @@ def motor_feed(speed, rotate, side):
     
 #    outSide = 0
     #print(str(int(outyaw))+"  "+str(int(ang_err)))
-    print(str(int(outyaw))+"  "+str(int(ang_err)))
+    #print(str(int(outyaw))+"  "+str(int(ang_err)))
 
    # print(" " +str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
     speedm1 = int(speed + rotate + side - outyaw + outSide + outfront + (speed * 0.0))
@@ -251,8 +280,13 @@ def get_input():
     #print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
 
 
-
-
+def ir_read():
+    GPIO.setup(26, GPIO.IN)  # For Ir input purpose
+    ir = GPIO.input(26)
+    
+    return ir
+    
+    
 if __name__ == '__main__':
     motor_setup()
 
@@ -260,6 +294,8 @@ if __name__ == '__main__':
     while True:
 
         get_input()
+        #ir_read()
+        arduino_out()
         Com_Arduino()
         motor_feed(speed, offsetyaw, side)
 

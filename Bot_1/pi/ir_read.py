@@ -1,17 +1,15 @@
-import RPi.GPIO as IO
+import RPi.GPIO as GPIO
 import time
-IO.setwarnings(False)
-IO.setmode(IO.BCM)
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
 
-IO.setup(2,IO.OUT) #GPIO 2 -> Red LED as output
-IO.setup(3,IO.OUT) #GPIO 3 -> Green LED as output
-IO.setup(14,IO.IN) #GPIO 14 -> IR sensor as input
+GPIO.setup(26,GPIO.IN) #GPGPIO 14 -> IR sensor as input
 
 
 while 1:
 
-    if(IO.input(14)==True): #object is far
+    if(GPIO.input(26)==True): #object is far
         print('i am here')
     
-    if(IO.input(14)==False): #object is near
+    if(GPIO.input(26)==False): #object is near
         print('hello')

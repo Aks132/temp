@@ -1,4 +1,5 @@
 #include "MPU9250.h"
+#include "Arduino.h"
 MPU9250 mpu;
 float e,f,g,x,y,z,y_g;
 //Lidar
@@ -7,48 +8,11 @@ TFMPlus tfmP;         // Create a TFMini Plus object
 TFMPlus tfmP2;         // Create a TFMini Plus object
 TFMPlus tfmP3;         // Create a TFMini Plus object
 
-// Initialize variables
 
-
-void mpu_setup() {
-  Wire.begin();
-  delay(200);
-  MPU9250Setting setting;
-  setting.accel_fs_sel = ACCEL_FS_SEL::A16G;
-  setting.gyro_fs_sel = GYRO_FS_SEL::G2000DPS;
-  setting.mag_output_bits = MAG_OUTPUT_BITS::M16BITS;
-  setting.fifo_sample_rate = FIFO_SAMPLE_RATE::SMPL_200HZ;
-  setting.gyro_fchoice = 0x03;
-  setting.gyro_dlpf_cfg = GYRO_DLPF_CFG::DLPF_92HZ;
-  setting.accel_fchoice = 0x01;
-  setting.accel_dlpf_cfg = ACCEL_DLPF_CFG::DLPF_99HZ;
-
-  
-  if (!mpu.setup(0x68,setting)) {  // change to your own address
-    long start = millis();
-    while (millis - start < 5000) {
-      Serial.println("MPU connection failed. Please check your connection with `connection_check` example.");
-      delay(1000);
-    }
-  }
-
-     // mpu.selectFilter(QuatFilterSel::NONE);
-    // mpu.selectFilter(QuatFilterSel::MADGWICK);
-   mpu.selectFilter(QuatFilterSel::MAHONY);
-
-
-  mpu.setAccBias(90.91, 88.44, 2.41);
-  mpu.setGyroBias(-1.05, 1.09, -0.6);
-  mpu.setMagBias(312.62, 256.85, -368.51);
-  mpu.setMagScale(1.15,0.89,0.98);
-  mpu.setMagneticDeclination(0.26);
-
-
-}
 
 void Lidarsetup(){
 //LIDAR2
- Serial2.begin( 115200);  // Initialize TFMPLus device serial port.
+ Serial2.begin(115200);  // Initialize TFMPLus device serial port.
   delay(20);
   tfmP2.begin( &Serial2);   // Initialize device library object and...
  
