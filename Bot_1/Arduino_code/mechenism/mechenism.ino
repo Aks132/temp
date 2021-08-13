@@ -37,7 +37,7 @@ long lastTime = millis();
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-
+  ir_setup();
   Serial.setTimeout(20);
   Serial.println("Ready ");
   Lidarsetup();
@@ -60,7 +60,7 @@ void setup() {
   digitalWrite(stepen, HIGH);
   delay(100);
   digitalWrite(stepen, LOW);
-  shootcount = 4;
+  shootcount = 0;
 int t_length = sizeof(Timehalt) / sizeof(Timehalt[0]);
   qsort(Timehalt, t_length, sizeof(Timehalt[0]), sort_desc);
 
@@ -128,21 +128,17 @@ void stepperset(int Sig)
 void shoot(int x)
 {
   digitalWrite(RELAY_PIN[x], LOW);
-  delayread(1000);
+  delayread(500);
   digitalWrite(RELAY_PIN[x], HIGH);
-  delayread(1000);
+  delayread(500);
 }
 
 void jhonson_ir_set()
-{ digitalWrite(DIR[4], LOW);
-   analogWrite(PWM[4], 255);
-  while(ir != '1'){
-    delayread(50);
-  }
-  digitalWrite(DIR[4], HIGH);
-  analogWrite(PWM[4], 0);
-  
-  }
+{
+  for(int ty = 0 ; ty<= 4 ; ty++)
+  {digitalWrite(DIR[ty], LOW);
+   analogWrite(PWM[ty], 255);  
+  }}
 
 void jhonson_set(int Si)
 {
@@ -187,6 +183,7 @@ void delayread(int halt)
     getlidardata();
     getlidardata2();
     getlidardata3();
+    ir_work();
     if (Serial.available())
     { data = Serial.readStringUntil("/n");
       fire = char(data[1]);
@@ -194,9 +191,6 @@ void delayread(int halt)
       char x = '0';
        x = char(data[2]);
       st = char(data[3]);
-      ir = char(data[4]);
-
-
 
       
       if (x == '1' && (millis()-start_count_data) >= 300) {
@@ -220,7 +214,7 @@ void delayread(int halt)
    
 
 
-    Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##" + String(count_no) + String(st) + String(mode) +" "+ String(ir));
+    Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##");
     }
     else {
       Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##");
@@ -254,7 +248,7 @@ void loop() {
 
 
   */
-  
+ 
   if(mode == 0)
   {control_stepper(count_no , st);
     }
@@ -269,15 +263,15 @@ void loop() {
     jhonson_ir_set();
   }
 
-  if (fire == '1' && shootcount >= 0)
+  if (fire == '1' && shootcount <= 4)
   {
     shoot(shootcount);
     Serial.println(shootcount);
-    shootcount -= 1 ;
+    shootcount += 1 ;
   }
-  if (shootcount <= -1) {
+  if (shootcount >= 5) {
     Serial.println("okay here/");
-    shootcount = 4;
+    shootcount = 0;
   }
 
 }

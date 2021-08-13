@@ -10,6 +10,8 @@ GPIO.setup(2,GPIO.OUT)
 GPIO.setup(3,GPIO.OUT)
 
 GPIO.output(2,GPIO.LOW)
+
+
 GPIO.output(3,GPIO.LOW)
 try:
      ser2 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.01)

@@ -15,7 +15,7 @@ GPIO.setwarnings(False)
 reqfront = 50
 reqside = 25
 #Poddistlist = [50,(145 + 5 - 44),(145 + 5 - 24),(145 + 5),(145 + 5 + 24),(145 + 5 + 44)] #70 - 45 = 25
-Poddistlist = [50,(97),(117),(137),(157),177,400] #70 - 45 = 25
+Poddistlist = [50,(102),(117),(137),(157),177,177] #70 - 45 = 25
 Podlistside= [25,25,25,25,25,25,25]
 pos = 1
 PWM = [20, 17, 23, 13]
@@ -26,7 +26,7 @@ offsetyaw = 0
 side = 0
 countpod = 0
 
-GPIO.setup(14,GPIO.IN)
+GPIO.setup(26,GPIO.IN)
 ir_1 = 0
 
 
@@ -110,10 +110,7 @@ def Com_Arduino():
             if y == -1:
                 y = 2
             ir_1 = 0   
-            if(ir_read()==1):
-            #    print('hello')
-                ir_1 = 1
-            message = str((jsVal['options']))+str((jsVal['R2']))+str(x)+str(y)+str(ir_1) + "\n"
+            message = str((jsVal['options']))+str((jsVal['R2']))+str(x)+str(y)+ "\n"
             #print(message)
             ser1.write(message.encode('utf-8'))
             
@@ -123,7 +120,7 @@ def Com_Arduino():
                 sidedist = float(l[4])
                 sidedist2 = float(l[2])
                 if(sidedist-sidedist2 < 30):
-                    ang_err = -(sidedist-sidedist2) 
+                    ang_err = -(sidedist-sidedist2) +3
                # print(int(ang_err))
                # print('Yaw ' + str(int(Yaw))+" " +str(presetyaw)+ ' frontdist ' + str(frontdist) + ' sidedist ' + str(sidedist)+ ' sidedist2 ' + str(sidedist2))
 
@@ -240,7 +237,7 @@ def motor_feed(speed, rotate, side):
     #print(str(int(outyaw))+"  "+str(int(ang_err)))
     #print(str(int(outyaw))+"  "+str(int(ang_err)))
 
-   # print(" " +str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
+    #print(" " +str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
     speedm1 = int(speed + rotate + side - outyaw + outSide + outfront + (speed * 0.0))
     speedm2 = int(speed - rotate - side + outyaw - outSide + outfront + (speed * 0.0))
     speedm3 = int(speed + rotate - side - outyaw - outSide + outfront + (speed * 0.0))
@@ -279,13 +276,6 @@ def get_input():
 
     #print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
 
-
-def ir_read():
-    GPIO.setup(26, GPIO.IN)  # For Ir input purpose
-    ir = GPIO.input(26)
-    
-    return ir
-    
     
 if __name__ == '__main__':
     motor_setup()
@@ -298,6 +288,7 @@ if __name__ == '__main__':
         arduino_out()
         Com_Arduino()
         motor_feed(speed, offsetyaw, side)
+        sleep(0.01)
 
 
 

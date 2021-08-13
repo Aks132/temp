@@ -3,7 +3,8 @@ void control_jhonson(int x,char y)
     if (y == '2'){
       digitalWrite(DIR[x], LOW);
       analogWrite(PWM[x], 255);
-      delayread(300);
+      delay(100);
+      delayread(200);
       analogWrite(PWM[x], 0);
     
     }
@@ -11,7 +12,8 @@ void control_jhonson(int x,char y)
     else if (y == '1'){
       digitalWrite(DIR[x], HIGH);
       analogWrite(PWM[x], 255);
-      delayread(300);
+      delay(100);
+      delayread(200);
       analogWrite(PWM[x], 0);
     
     }
