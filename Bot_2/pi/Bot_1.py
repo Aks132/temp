@@ -71,7 +71,7 @@ DS_error = 0
 
 try:
    # ser2 = serial.Serial('/dev/ttyACM0', 9600, timeout=0.01)
-    ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)  # change name, if needed
+    ser1 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.01)  # change name, if needed
     ser1.flush()
     #ser2 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)
     #ser2.flush()

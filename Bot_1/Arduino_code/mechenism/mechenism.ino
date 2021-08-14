@@ -1,7 +1,4 @@
-#include <Arduino.h>
-float YAW, YAWfilter;
-float offset_yaw = 0;
-float I_YAW = 0;
+
 float dist1, dist2, dist3;
 String data = "Hello";
 
@@ -10,15 +7,14 @@ int steps[5] =   {25, 29, 33, 37, 41}; //{25, 31, 37, 43, 49};
 int stepdir[5] = {23, 27, 31, 35, 39}; //{27, 33, 39, 45, 51};
 
 
-const int RELAY_PIN[5] = {53,51,49,47,45};
+const int RELAY_PIN[5] = {45,47,49,51,53};//{53,51,49,47,45};
 
 int shootcount = 0;
 int stepcount[5] = {1000, 1000, 1000, 1000, 1000};
 int stepcount_2[5] = { -1800, 1000, 1200, -1700, 1600};
-int DIR[5] = {3, 5, 7, 9, 11};
-int PWM[5] = {2, 4, 6, 8, 10};
-int Timehalt[5] = {9500, 11500, 8500, 9000, 9550}; // mm per 100ms {3.6 , 3.15,5.55,5.1,5.1}
-int Timehalt_r[5] =  {9500,11500,8500,9000,9550};// {1,4,0,3,2}
+int DIR[5] = {11, 9, 7, 5, 3};//{3, 5, 7, 9, 11};
+int PWM[5] = {10 ,8, 6, 4, 2};//{2 ,4, 6, 8, 10};
+
 
 char command = 0;
 int count = 0;
@@ -26,12 +22,15 @@ int bc = 0;
 char fire = '0';
 char set = '0';
 char ir = '0';
-
+char lod_r_sig = '0';
 int mode = 1;
 int count_no = 0;
 char st = '0';
 long start_count_data = 0; 
 long start_mode_data = 0;
+
+int shootlist[5] = {0,3,4,1,2};
+
 
 long lastTime = millis();
 void setup() {
@@ -41,8 +40,6 @@ void setup() {
   Serial.setTimeout(20);
   Serial.println("Ready ");
   Lidarsetup();
-  pinMode(34, INPUT);
-  pinMode(12, INPUT);
 
   for (int xy = 0; xy <= 4; xy++) {
     pinMode(RELAY_PIN[xy], OUTPUT);
@@ -61,8 +58,6 @@ void setup() {
   delay(100);
   digitalWrite(stepen, LOW);
   shootcount = 0;
-int t_length = sizeof(Timehalt) / sizeof(Timehalt[0]);
-  qsort(Timehalt, t_length, sizeof(Timehalt[0]), sort_desc);
 
 }
 
@@ -128,7 +123,7 @@ void stepperset(int Sig)
 void shoot(int x)
 {
   digitalWrite(RELAY_PIN[x], LOW);
-  delayread(500);
+  delayread(200);
   digitalWrite(RELAY_PIN[x], HIGH);
   delayread(500);
 }
@@ -136,10 +131,12 @@ void shoot(int x)
 void jhonson_ir_set()
 {
   for(int ty = 0 ; ty<= 4 ; ty++)
-  {digitalWrite(DIR[ty], LOW);
-   analogWrite(PWM[ty], 255);  
+  {digitalWrite(DIR[ty], HIGH);
+   analogWrite(PWM[ty], 255);
+   delay(100);  
   }}
 
+/*
 void jhonson_set(int Si)
 {
   if (Si == 1) {long start = millis();
@@ -174,23 +171,31 @@ void jhonson_set(int Si)
   }
 }
 
-
+*/
 void delayread(int halt)
 {
   long  start = millis();
   while (halt >= millis() - start)
-  {
+  {long check = millis();
+    
     getlidardata();
     getlidardata2();
     getlidardata3();
-    ir_work();
+
+ 
+   
+      ir_work(0);
+    
+    
     if (Serial.available())
-    { data = Serial.readStringUntil("/n");
+    { 
+      data = Serial.readStringUntil("/n");
       fire = char(data[1]);
       set = char(data[0]);
       char x = '0';
        x = char(data[2]);
       st = char(data[3]);
+      lod_r_sig = char(data[4]);
 
       
       if (x == '1' && (millis()-start_count_data) >= 300) {
@@ -214,10 +219,10 @@ void delayread(int halt)
    
 
 
-    Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##");
+    Serial.println("##@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##"+String(count_no)+String(mode)+"  "+String(lod_r_sig)+" ");
     }
     else {
-      Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##");
+      Serial.println("##@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##"+String(millis()-check) + "  ");
     }
 
   }
@@ -229,25 +234,6 @@ void loop() {
   //Serial.println(shootcount);
   //Serial.println(String(digitalRead(12))+" " + String(digitalRead(32))+" "+String(shootcount));
   delayread(100);
-
-  /*
-    if (bc == 1 && digitalRead(12) == 1)
-    { Serial.println("YO MF I M DONE!!!! ");
-      stepperset(0);
-      //jhonson_set(0);
-      bc = 0;
-    }
-    if (digitalRead(12) == 1) {
-      delay(1000);
-      if (digitalRead(12) == 1) {
-      Serial.println("Setup Start");
-      stepperset(1);
-      //jhonson_set(1);
-      }
-    }
-
-
-  */
  
   if(mode == 0)
   {control_stepper(count_no , st);
@@ -265,8 +251,8 @@ void loop() {
 
   if (fire == '1' && shootcount <= 4)
   {
-    shoot(shootcount);
-    Serial.println(shootcount);
+    shoot(shootlist[shootcount]);
+    Serial.println(shootlist[shootcount]);
     shootcount += 1 ;
   }
   if (shootcount >= 5) {

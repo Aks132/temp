@@ -1,23 +1,47 @@
 import RPi.GPIO as GPIO
 import joy as js
 import serial
-import time
+from time import sleep
+from multiprocessing import Process
+
+
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-reqfront = 50
-reqside = 25
 
-Poddistlist = [(145),(310),(380),(545)]
+
+
+reqfront = 400
+reqside = 200
+#Poddistlist = [50,(145 + 5 - 44),(145 + 5 - 24),(145 + 5),(145 + 5 + 24),(145 + 5 + 44)] #70 - 45 = 25
+# 1M  322F S3 , 4M 312F S6, 5M 342F S5, 5M 302F S5           // M= mechanism , L = Long , B = Blue , R= red
+
+
+
+Poddistlist = [400,(400),(335),(325),(348),348,145,400,400] #70 - 45 = 25
+Podlistside= [200,115,115,115,115,115,115,115,200]
+Podanglelist = [0,0,0,0,0,0,0,0,0]
+angleoffset = 0
+
 pos = 1
-PWM = [20, 17, 23, 5]
+PWM = [20, 17, 23, 13]
 DIG = [21, 27, 24, 6]
 Soft_PWM = []
 speed = 0
 offsetyaw = 0
 side = 0
 countpod = 0
+
+GPIO.setup(26,GPIO.IN)
+ir_1 = 0
+
+
+GPIO.setup(2,GPIO.OUT)
+GPIO.setup(3,GPIO.OUT)
+
+GPIO.output(2,GPIO.LOW)
+GPIO.output(3,GPIO.LOW)
 
 # ----------------------------------------------------
 Yaw = 0
@@ -54,35 +78,62 @@ DS_error = 0
 
 try:
    # ser2 = serial.Serial('/dev/ttyACM0', 9600, timeout=0.01)
-    ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)  # change name, if needed
+  #  ser1 = serial.Serial('/dev/ttyACM0 ', 115200, timeout=0.01)  # change name, if needed
+  #  ser1.flush()
+    ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)
     ser1.flush()
-    #ser2 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)
-    #ser2.flush()
 except:
-    try:
-        ser1 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.01)
+    print("/dev/tty Port issue")
+    sleep(10)
 
-    except:
-        print("/dev/tty Port issue")
+def arduino_out():
+    jsVal = js.getJS()
+    if jsVal['R1'] == 1:
+        print("i am in phase 1")
+        GPIO.output(2,GPIO.HIGH)
+    elif jsVal['R1'] == 0:
+        GPIO.output(2,GPIO.LOW)
 
+    if jsVal['L1'] == 1:
+        print("i am in phase 2")
+        GPIO.output(3,GPIO.HIGH)
+    elif jsVal['L1'] == 0:
+        GPIO.output(3,GPIO.LOW)
 
 def Com_Arduino():
     global Yaw, frontdist, sidedist,sidedist2,ang_err
-    try:
+         
 
-        response = ser1.readline().decode('utf-8').rstrip()
-       # print(response)
-        l = str(response).split('@')  ##@Yaw@frontdist@sidedist@##
-       # print(len(l))
-       # print(len(response))
-        if len(l) >= 4 and len(response) > 20:
-            Yaw = float(l[1]) + offsetyaw + presetyaw
-            frontdist = float(l[4])
-            sidedist = float(l[3])
-            sidedist2 = float(l[2])
-            ang_err = -(sidedist-sidedist2) -3
-     #       print(int(ang_err))
-   #         print('Yaw ' + str(int(Yaw))+" " +str(presetyaw)+ ' frontdist ' + str(frontdist) + ' sidedist ' + str(sidedist)+ ' sidedist2 ' + str(sidedist2))
+    try:
+        if ser1.in_waiting > 0:
+            response = ser1.readline().decode('utf-8').rstrip()
+            
+            print(response)
+            l = str(response).split('@')  ##@Yaw@frontdist@sidedist@##
+           # print(len(l))
+           # print(len(response))
+            jsVal = js.getJS()
+            x,y = js.get_hats()
+            if x == -1:
+                x = 2
+            if y == -1:
+                y = 2
+            ir_1 = 0   
+            message = str((jsVal['options']))+str((jsVal['R2']))+str(x)+str(y)+str((jsVal['o']))+ "\n"
+            #print(message)
+            ser1.write(message.encode('utf-8'))
+            
+            if len(l) >= 4 and len(response) > 20:
+                #Yaw = float(l[1]) + offsetyaw + presetyaw
+                frontdist = float(l[2])
+                sidedist = float(l[3])
+                sidedist2 = float(l[1])
+                if(sidedist-sidedist2 < 15):
+                    ang_err = -(sidedist-sidedist2) + angleoffset
+                #print(int(ang_err))
+                #print('Yaw ' + str(int(Yaw))+" " +str(presetyaw)+ ' frontdist ' + str(frontdist) + ' sidedist ' + str(sidedist)+ ' sidedist2 ' + str(sidedist2))
+
+    
     except:
        print("Yaw error")
 
@@ -116,28 +167,30 @@ def motor_feed(speed, rotate, side):
         D_error = 0
 
     if jsVal['x'] == 1 and P_Y != 0.8:
-        P_ER = 1.5 #1.5
-        D_Y = 4 #4
-        
+        print("Yaw correction start")
+        P_ER = 1 #1.5
+        D_Y = 0.5 #4    
         I_A = 0.0002 #0.0002
+        
         #I_Y = 0.001
 
         P_Y = 0.8
    
         presetyaw = -Yaw
         Yaw = 0
-        time.sleep(0.1)
+        sleep(0.1)
 
     if jsVal['s'] == 1:
-        P_F = 0.5 #0
-        D_F = 1
-        I_F = 0.0001
+        P_F = 0.2 #0.3
+        D_F = 0.1 
+        I_F = 0.001 #0.001
         
-        P_S = 1 #1
+        P_S = 0.5 #1.5
         I_S = 0.0001 #0.0001
-        D_S = 6 #6
+        D_S = 0.4 #6
+        
     if jsVal['t'] == 1:
-        P_F = 0
+        P_F = 0.0
         D_F = 0
         I_F = 0.000
         I_Front = 0
@@ -147,16 +200,18 @@ def motor_feed(speed, rotate, side):
         D_S = 0
     
     
-    if(jsVal['R1'] == 1 ):
-        time.sleep(0.1)
+    if(jsVal['L2'] == 1 ):
+        sleep(0.15)
         jsVal = js.getJS()
-        if(jsVal['R1'] == 1 ):
+        if(jsVal['L2'] == 1 ):
            
             reqfront = Poddistlist[countpod]
+            reqside = Podlistside[countpod]
+            angleoffset = Podanglelist[countpod]
             countpod += pos
             print(countpod)
-            if abs(countpod) >= 3 or countpod <= 0 :
-                pos = -pos
+            if abs(countpod) >=8  or countpod <= 0 :
+                countpod = 0
                 
 
     # YAW
@@ -175,30 +230,30 @@ def motor_feed(speed, rotate, side):
     # Side
     #print(int(sidedist+sidedist2)/2)
     
-    error_side = -(reqside - (sidedist+sidedist2)/2)*P_S
+    error_side = int(reqside - (sidedist+sidedist2)/2)
     I_Side += error_side * I_S
     D_Side = (DS_error - error_side)*D_S
     DS_error = error_side
-    outSide = error_side + I_Side + D_Side
+    outSide = error_side*P_S + I_Side + D_Side
 
     # Front
-    error_front = (reqfront - frontdist)*P_F
+    error_front = int(-(reqfront - frontdist))
     I_Front += error_front * I_F 
     D_Front = (DF_error - error_front)*D_F
     DF_error = error_front
-    outfront = (error_front) #+ D_Front + I_Front)
+    outfront = -((error_front)*P_F + D_Front + I_Front)
     
 #    outSide = 0
-    #print(outSide)
-  
+    #print(str(int(outyaw))+"  "+str(int(ang_err)))
+    #print(str(int(outyaw))+"  "+str(int(ang_err)))
 
-    #print(str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
-    speedm1 = int(speed + rotate + side - outyaw - outSide + outfront + (speed * 0.0))
-    speedm2 = int(speed - rotate - side + outyaw + outSide + outfront + (speed * 0.0))
-    speedm3 = int(speed + rotate - side - outyaw + outSide + outfront + (speed * 0.0))
-    speedm4 = int(speed - rotate + side + outyaw - outSide + outfront + (speed * 0.0))
+    #print(" " +str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
+    speedm1 = int(speed + rotate + side - outyaw + outSide + outfront + (speed * 0.0))
+    speedm2 = int(speed - rotate - side + outyaw - outSide + outfront + (speed * 0.0))
+    speedm3 = int(speed + rotate - side - outyaw - outSide + outfront + (speed * 0.0))
+    speedm4 = int(speed - rotate + side + outyaw + outSide + outfront + (speed * 0.0))
     Speed = [speedm1, speedm2, speedm3, speedm4]
-   # print(Speed)
+    #print(Speed)
     i = 0
     for spd in Speed:
         if abs(spd) > 99:
@@ -224,32 +279,38 @@ def stop():
 def get_input():
     global speed, offsetyaw, side
     jsVal = js.getJS()
-    speed = -(jsVal['axis2']) * 80
-    offsetyaw = -(jsVal['axis3']) * 20
-    side = -(jsVal['axis1']) * 20
+    speed = -(jsVal['axis2']) * 40
+    offsetyaw = -(jsVal['axis1']) * 30  
+    side = -(jsVal['axis3']) * 30
+ 
 
     #print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
 
-def Com_Arduino_2():
-
-    response = ser2.readline().decode('utf-8').rstrip()
-    print(response)
-
+    
 if __name__ == '__main__':
     motor_setup()
+
+
     while True:
+
         get_input()
-        #Com_Arduino_2()
+        #ir_read()
+        arduino_out()
         Com_Arduino()
         motor_feed(speed, offsetyaw, side)
+        sleep(0.01)
+
+
 
 '''       try:
             get_input()
             Com_Arduino()
             motor_feed(speed, offsetyaw, side)
-            time.sleep(0.001)
+            sleep(0.001)
         except:
             #stop()
             print("Exception Errrorrrrrrrrrrrrrrrrrrrrrrrrrr ")
 '''
-#orange ylw grn blue purple white
+#orange ylw grn blue purple white  
+
+     

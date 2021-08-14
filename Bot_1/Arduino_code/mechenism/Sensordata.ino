@@ -1,7 +1,4 @@
-#include "MPU9250.h"
-#include "Arduino.h"
-MPU9250 mpu;
-float e,f,g,x,y,z,y_g;
+
 //Lidar
 #include <TFMPlus.h>  // Include TFMini Plus Library v1.4.2
 TFMPlus tfmP;         // Create a TFMini Plus object
@@ -19,7 +16,7 @@ void Lidarsetup(){
   Serial.print( "Data-Frame rate: ");
   if ( tfmP2.sendCommand( SET_FRAME_RATE, FRAME_100))
   {
-    Serial.print( FRAME_100);
+    Serial.print( FRAME_250);
   }
   else tfmP2.printReply();
 
@@ -31,7 +28,7 @@ void Lidarsetup(){
   Serial.print( "Data-Frame rate: ");
   if ( tfmP.sendCommand( SET_FRAME_RATE, FRAME_100))
   {
-    Serial.print( FRAME_100);
+    Serial.print( FRAME_250);
   }
   else tfmP.printReply();
   //------------------------------------------------------------
@@ -43,7 +40,7 @@ void Lidarsetup(){
   Serial.print( "Data-Frame rate: ");
   if ( tfmP3.sendCommand( SET_FRAME_RATE, FRAME_100))
   {
-    Serial.print( FRAME_100);
+    Serial.print( FRAME_250);
   }
   else tfmP3.printReply();
 
@@ -84,20 +81,3 @@ void getlidardata3(){
       dist3 = 0.4*int(tfDist) + 0.6*dist3;   // display distance,
     }
     }
-void motion_sense(){
-    if (mpu.update()) {
-    static uint32_t prev_ms = millis();
-    if (millis() > prev_ms + 25) {
-    YAW = mpu.getYaw(), 2;
-
-    
-//    Serial.println(mpu.getMagZ());
-
-
-    
-    //Serial.println(mpu.getEulerZ());
-    YAWfilter = 1*YAW + YAWfilter*0.0;
-      prev_ms = millis();
-    }
-  }
-  }

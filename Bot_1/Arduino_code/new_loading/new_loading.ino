@@ -50,20 +50,20 @@ void Stepper_Set(int pos)
 
   if (pos == 1)
   { digitalWrite(dirPin, LOW);
-    for (int i = 0; i < 10; i++) {
-      digitalWrite(stepPin, LOW);
-      delayMicroseconds(100);
+    for (int i = 0; i < 100; i++) {
       digitalWrite(stepPin, HIGH);
+      delayMicroseconds(100);
+      digitalWrite(stepPin, LOW);
       delayMicroseconds(100);
     }
   }
 
   else {
     digitalWrite(dirPin, HIGH);
-    for (int i = 0; i < 10; i++) {
-      digitalWrite(stepPin, LOW);
-      delayMicroseconds(100);
+    for (int i = 0; i < 100; i++) {
       digitalWrite(stepPin, HIGH);
+      delayMicroseconds(100);
+      digitalWrite(stepPin, LOW);
       delayMicroseconds(100);
     }
   }

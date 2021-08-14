@@ -13,8 +13,12 @@ GPIO.output(2,GPIO.LOW)
 
 
 GPIO.output(3,GPIO.LOW)
+
+
+
+
 try:
-     ser2 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.01)
+     ser2 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)
      ser2.flush()
 except:
      print("/dev/tty Port issue")
@@ -31,10 +35,27 @@ def Com_Arduino():
         print("error")
         
      
- 
+'''
+
+def arduino_out():
+    jsVal = js.getJS()
+    if jsVal['R1'] == 1:
+        print("i am in phase 1")
+        GPIO.output(2,GPIO.HIGH)
+    elif jsVal['R1'] == 0:
+        GPIO.output(2,GPIO.LOW)
+
+    if jsVal['L1'] == 1:
+        print("i am in phase 2")
+        GPIO.output(3,GPIO.HIGH)
+    elif jsVal['L1'] == 0:
+        GPIO.output(3,GPIO.LOW)
+'''
+    
 
 if __name__ == '__main__':
    while True:
        Com_Arduino()
+#    arduino_out()
 
 

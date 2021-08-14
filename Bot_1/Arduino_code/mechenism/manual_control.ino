@@ -1,20 +1,18 @@
 void control_jhonson(int x,char y)
 {
     if (y == '2'){
-      digitalWrite(DIR[x], LOW);
+      digitalWrite(DIR[x], HIGH);
       analogWrite(PWM[x], 255);
       delay(100);
-      delayread(200);
-      analogWrite(PWM[x], 0);
+       //analogWrite(PWM[x], 0);
     
     }
 
     else if (y == '1'){
-      digitalWrite(DIR[x], HIGH);
+      digitalWrite(DIR[x], LOW);
       analogWrite(PWM[x], 255);
       delay(100);
-      delayread(200);
-      analogWrite(PWM[x], 0);
+      // analogWrite(PWM[x], 0);
     
     }
   }
@@ -41,21 +39,4 @@ void control_stepper(int x , char y){
     digitalWrite(steps[x], LOW);
     delayMicroseconds(200);}
   }
-
 }
-int sort_desc(const void *cmp1, const void *cmp2)
-{
-  // Need to cast the void * to int *
-  int a = *((int *)cmp1);
-  int b = *((int *)cmp2);
-  // The comparison
-  return a > b ? -1 : (a < b ? 1 : 0);
-  // A simpler, probably faster way:
-  //return b - a;
-}
-
-void IR_Sensor(){
-  
-  
-  
-  }

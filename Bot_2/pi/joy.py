@@ -4,9 +4,10 @@ pygame.init()
 controller = pygame.joystick.Joystick(0)
 controller.init()
 buttons = {'x':0,'o':0,'t':0,'s':0,
-           'L1':0,'R1':0,
+           'L1':0,'R1':0, 'L2':0,'R2':0,
            'share':0,'options':0,
            'axis1':0.,'axis2':0.,'axis3':0.,'axis4':0.,'axis5':0.,'axis6':0.}
+
 axiss=[0.,0.,0.,0.,0.,0.]
  
  
@@ -36,12 +37,16 @@ def getJS(name=''):
         return buttons[name]
 def main():
     print(getJS()) # To get all values
-    sleep(0.05)
+    sleep(0.01)
 #     print(getJS('share')) # To get a single value
 #     sleep(0.05)
  
+def get_hats():
+    x,y = controller.get_hat(0)
+    return x,y
  
 if __name__ == '__main__':
   while True:
+        
     main()
         
