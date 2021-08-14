@@ -10,7 +10,7 @@ int steps[5] =   {25, 29, 33, 37, 41}; //{25, 31, 37, 43, 49};
 int stepdir[5] = {23, 27, 31, 35, 39}; //{27, 33, 39, 45, 51};
 
 
-const int RELAY_PIN[5] = {53,51,49,47,45};
+const int RELAY_PIN[5] = {53, 51, 49, 47, 45};
 
 int shootcount = 0;
 int stepcount[5] = {1000, 1000, 1000, 1000, 1000};
@@ -18,7 +18,7 @@ int stepcount_2[5] = { -1800, 1000, 1200, -1700, 1600};
 int DIR[5] = {3, 5, 7, 9, 11};
 int PWM[5] = {2, 4, 6, 8, 10};
 int Timehalt[5] = {9500, 11500, 8500, 9000, 9550}; // mm per 100ms {3.6 , 3.15,5.55,5.1,5.1}
-int Timehalt_r[5] =  {9500,11500,8500,9000,9550};// {1,4,0,3,2}
+int Timehalt_r[5] =  {9500, 11500, 8500, 9000, 9550}; // {1,4,0,3,2}
 
 char command = 0;
 int count = 0;
@@ -30,7 +30,7 @@ char ir = '0';
 int mode = 1;
 int count_no = 0;
 char st = '0';
-long start_count_data = 0; 
+long start_count_data = 0;
 long start_mode_data = 0;
 
 long lastTime = millis();
@@ -61,7 +61,7 @@ void setup() {
   delay(100);
   digitalWrite(stepen, LOW);
   shootcount = 0;
-int t_length = sizeof(Timehalt) / sizeof(Timehalt[0]);
+  int t_length = sizeof(Timehalt) / sizeof(Timehalt[0]);
   qsort(Timehalt, t_length, sizeof(Timehalt[0]), sort_desc);
 
 }
@@ -128,40 +128,44 @@ void stepperset(int Sig)
 void shoot(int x)
 {
   digitalWrite(RELAY_PIN[x], LOW);
-  delayread(500);
+  delayread(200);
   digitalWrite(RELAY_PIN[x], HIGH);
   delayread(500);
 }
 
 void jhonson_ir_set()
 {
-  for(int ty = 0 ; ty<= 4 ; ty++)
-  {digitalWrite(DIR[ty], LOW);
-   analogWrite(PWM[ty], 255);  
-  }}
+  for (int ty = 0 ; ty <= 4 ; ty++)
+  { digitalWrite(DIR[ty], LOW);
+    analogWrite(PWM[ty], 255);
+  }
+}
 
 void jhonson_set(int Si)
 {
-  if (Si == 1) {long start = millis();
- for (int yt = 0 ; yt <= 4; yt++) {
+  if (Si == 1) {
+    long start = millis();
+    for (int yt = 0 ; yt <= 4; yt++) {
       digitalWrite(DIR[yt], LOW);
       analogWrite(PWM[yt], 255);
     }
-    
-  for(int t = 4; t>=0; t--){
-  while(millis()-start < Timehalt[t])
-  {delayread(50);  
-  }
-  
-  int ix = 0;
-  while(Timehalt_r[ix] != Timehalt[t])
-  {ix++;}
-  Serial.println(String(ix)+"  "+String(millis()-start));
-  //stop ix motor
-  digitalWrite(DIR[ix], LOW);
-  analogWrite(PWM[ix], 0);
-  
-  }
+
+    for (int t = 4; t >= 0; t--) {
+      while (millis() - start < Timehalt[t])
+      { delayread(50);
+      }
+
+      int ix = 0;
+      while (Timehalt_r[ix] != Timehalt[t])
+      {
+        ix++;
+      }
+      Serial.println(String(ix) + "  " + String(millis() - start));
+      //stop ix motor
+      digitalWrite(DIR[ix], LOW);
+      analogWrite(PWM[ix], 0);
+
+    }
   }
   else if (Si == 0)
   {
@@ -189,32 +193,32 @@ void delayread(int halt)
       fire = char(data[1]);
       set = char(data[0]);
       char x = '0';
-       x = char(data[2]);
+      x = char(data[2]);
       st = char(data[3]);
 
-      
-      if (x == '1' && (millis()-start_count_data) >= 300) {
-      start_count_data = millis();
-      count_no += 1;
 
-      if (count_no == 5)
+      if (x == '1' && (millis() - start_count_data) >= 300) {
+        start_count_data = millis();
+        count_no += 1;
+
+        if (count_no == 5)
         {
           count_no = 0;
         }
       }
 
-      if (x == '2' && (millis()-start_mode_data) >= 300) 
+      if (x == '2' && (millis() - start_mode_data) >= 300)
       {
         start_mode_data = millis();
-        if(mode == 1 )
-        {mode =0;
-          }
-          else mode = 1;
+        if (mode == 1 )
+        { mode = 0;
+        }
+        else mode = 1;
       }
-   
 
 
-    Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##");
+
+      Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##"+"  "+String(count_no)+String(mode));
     }
     else {
       Serial.println("##@" + String(YAWfilter) + "@" + String(dist1) + "@" + String(dist2) + "@" + String(dist3) + "@##");
@@ -248,12 +252,12 @@ void loop() {
 
 
   */
- 
-  if(mode == 0)
-  {control_stepper(count_no , st);
-    }
-  if(mode == 1)
-  {control_jhonson(count_no ,st);
+
+  if (mode == 0)
+  { control_stepper(count_no , st);
+  }
+  if (mode == 1)
+  { control_jhonson(count_no , st);
   }
 
 

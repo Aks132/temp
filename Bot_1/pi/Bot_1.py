@@ -4,44 +4,42 @@ import serial
 from time import sleep
 from multiprocessing import Process
 
-
-
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
-
-
-
 reqfront = 50
 reqside = 25
-#Poddistlist = [50,(145 + 5 - 44),(145 + 5 - 24),(145 + 5),(145 + 5 + 24),(145 + 5 + 44)] #70 - 45 = 25
-Poddistlist = [50,(102),(117),(137),(157),177,177] #70 - 45 = 25
-Podlistside= [25,25,25,25,25,25,25]
+# Poddistlist = [50,(145 + 5 - 44),(145 + 5 - 24),(145 + 5),(145 + 5 + 24),(145 + 5 + 44)] #70 - 45 = 25
+Poddistlist = [50, 102, 117, 137, 157, 177, 177]  # 70 - 45 = 25
+Podlistside = [25, 25, 25, 25, 25, 25, 25]
+Podanglelist = [-3, 3, 3, 3, 3, 3]
+
+angleoffset = -3
+
 pos = 1
-PWM = [20, 17, 23, 13]
-DIG = [21, 27, 24, 6]
+PWM = [20, 17, 23, 19]
+DIG = [21, 27, 24, 26]
 Soft_PWM = []
 speed = 0
 offsetyaw = 0
 side = 0
 countpod = 0
 
-GPIO.setup(26,GPIO.IN)
+GPIO.setup(26, GPIO.IN)
 ir_1 = 0
 
+GPIO.setup(2, GPIO.OUT)
+GPIO.setup(3, GPIO.OUT)
 
-GPIO.setup(2,GPIO.OUT)
-GPIO.setup(3,GPIO.OUT)
-
-GPIO.output(2,GPIO.LOW)
-GPIO.output(3,GPIO.LOW)
+GPIO.output(2, GPIO.LOW)
+GPIO.output(3, GPIO.LOW)
 
 # ----------------------------------------------------
 Yaw = 0
 frontdist = 0
 sidedist = 0
 sidedist2 = 0
-ang_err =0
+ang_err = 0
 
 P_S = 0.0  # 0.3
 P_Y = 0
@@ -54,7 +52,7 @@ D_F = 0
 D_Y = 0
 
 I_A = 0
-I_ang =0
+I_ang = 0
 I_Yaw = 0
 I_Y = 0
 I_Front = 0
@@ -70,64 +68,64 @@ DF_error = 0
 DS_error = 0
 
 try:
-   # ser2 = serial.Serial('/dev/ttyACM0', 9600, timeout=0.01)
-    ser1 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)  # change name, if needed
+    # ser2 = serial.Serial('/dev/ttyACM0', 9600, timeout=0.01)
+    ser1 = serial.Serial('/dev/ttyUSB0', 115200, timeout=0.01)  # change name, if needed
     ser1.flush()
-    #ser2 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)
-    #ser2.flush()
+# ser2 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)
+# ser2.flush()
 except:
     print("/dev/tty Port issue")
+
 
 def arduino_out():
     jsVal = js.getJS()
     if jsVal['R1'] == 1:
         print("i am in phase 1")
-        GPIO.output(2,GPIO.HIGH)
+        GPIO.output(2, GPIO.HIGH)
     elif jsVal['R1'] == 0:
-        GPIO.output(2,GPIO.LOW)
+        GPIO.output(2, GPIO.LOW)
 
     if jsVal['L1'] == 1:
         print("i am in phase 2")
-        GPIO.output(3,GPIO.HIGH)
+        GPIO.output(3, GPIO.HIGH)
     elif jsVal['L1'] == 0:
-        GPIO.output(3,GPIO.LOW)
+        GPIO.output(3, GPIO.LOW)
+
 
 def Com_Arduino():
-    global Yaw, frontdist, sidedist,sidedist2,ang_err
-         
+    global Yaw, frontdist, sidedist, sidedist2, ang_err
 
     try:
         if ser1.in_waiting > 0:
             response = ser1.readline().decode('utf-8').rstrip()
-            #print(response)
+            print(response)
             l = str(response).split('@')  ##@Yaw@frontdist@sidedist@##
-           # print(len(l))
-           # print(len(response))
+            # print(len(l))
+            # print(len(response))
             jsVal = js.getJS()
-            x,y = js.get_hats()
+            x, y = js.get_hats()
             if x == -1:
                 x = 2
             if y == -1:
                 y = 2
-            ir_1 = 0   
-            message = str((jsVal['options']))+str((jsVal['R2']))+str(x)+str(y)+ "\n"
-            #print(message)
+            ir_1 = 0
+            message = str((jsVal['options'])) + str((jsVal['R2'])) + str(x) + str(y) + "\n"
+            # print(message)
             ser1.write(message.encode('utf-8'))
-            
+
             if len(l) >= 4 and len(response) > 20:
                 Yaw = float(l[1]) + offsetyaw + presetyaw
                 frontdist = float(l[3])
                 sidedist = float(l[4])
                 sidedist2 = float(l[2])
-                if(sidedist-sidedist2 < 30):
-                    ang_err = -(sidedist-sidedist2) +3
-               # print(int(ang_err))
-               # print('Yaw ' + str(int(Yaw))+" " +str(presetyaw)+ ' frontdist ' + str(frontdist) + ' sidedist ' + str(sidedist)+ ' sidedist2 ' + str(sidedist2))
+                if (sidedist - sidedist2 < 30):
+                    ang_err = -(sidedist - sidedist2) + angleoffset
+            # print(int(ang_err))
+            print('Yaw ' + str(int(ang_err))+" " +str(presetyaw)+ ' frontdist ' + str(frontdist) + ' sidedist ' + str(sidedist)+ ' sidedist2 ' + str(sidedist2))
 
-    
+
     except:
-       print("Yaw error")
-
+        print("Yaw error")
 
 
 def motor_setup():
@@ -142,13 +140,13 @@ def motor_setup():
 
 
 def motor_feed(speed, rotate, side):
-    global P_ER, pos,D_S, countpod ,P_S,P_Y,I_Y, I_Yaw, D_Yaw, D_error, D_Y, presetyaw, P_F, Yaw, reqside
-    global I_A , I_ang ,reqfront, I_Front, I_F, I_S, I_Side, DF_error, DS_error, D_F, D_Front, D_Side
+    global P_ER, pos, D_S, countpod, P_S, P_Y, I_Y, I_Yaw, D_Yaw, D_error, D_Y, presetyaw, P_F, Yaw, reqside
+    global I_A, I_ang, reqfront, I_Front, I_F, I_S, I_Side, DF_error, DS_error, D_F, D_Front, D_Side
     jsVal = js.getJS()
 
     if jsVal['o'] == 1 and P_Y == 0.8:
         presetyaw = 0
-        P_ER,P_Y = 0,0
+        P_ER, P_Y = 0, 0
         I_Y = 0
 
         I_ang = 0
@@ -159,27 +157,27 @@ def motor_feed(speed, rotate, side):
 
     if jsVal['x'] == 1 and P_Y != 0.8:
         print("Yaw correction start")
-        P_ER = 2 #1.5
-        D_Y = 1 #4    
-        I_A = 0.0002 #0.0002
-        
-        #I_Y = 0.001
+        P_ER = 2  # 1.5
+        D_Y = 1  # 4
+        I_A = 0.0002  # 0.0002
+
+        # I_Y = 0.001
 
         P_Y = 0.8
-   
+
         presetyaw = -Yaw
         Yaw = 0
         sleep(0.1)
 
     if jsVal['s'] == 1:
-        P_F = 0.5 #0.3
-        D_F = 0.4 
-        I_F = 0.000 #0.001
-        
-        P_S = 2.5 #1.5
-        I_S = 0.000 #0.0001
-        D_S = 4.5 #6
-        
+        P_F = 0.5  # 0.3
+        D_F = 0.4
+        I_F = 0.000  # 0.001
+
+        P_S = 2.5  # 1.5
+        I_S = 0.000  # 0.0001
+        D_S = 4.5  # 6
+
     if jsVal['t'] == 1:
         P_F = 0.0
         D_F = 0
@@ -189,61 +187,58 @@ def motor_feed(speed, rotate, side):
         I_S = 0
         I_Side = 0
         D_S = 0
-    
-    
-    if(jsVal['L2'] == 1 ):
+
+    if (jsVal['L2'] == 1):
         sleep(0.2)
         jsVal = js.getJS()
-        if(jsVal['L2'] == 1 ):
-           
+        if (jsVal['L2'] == 1):
+
             reqfront = Poddistlist[countpod]
             reqside = Podlistside[countpod]
+            angleoffset = Podanglelist[countpod]
             countpod += pos
             print(countpod)
-            if abs(countpod) >=6  or countpod <= 0 :
+            if abs(countpod) >= 6 or countpod <= 0:
                 countpod = 0
-                
 
     # YAW
     I_Yaw += Yaw * I_Y
-   # D_Yaw = (D_error - Yaw)
- 
-    
-    I_ang += ang_err * I_A
-    outyaw = (P_ER *ang_err)
-    D_Yaw = (D_error - ang_err)*D_Y
-    D_error = ang_err
-    outyaw = (P_ER *ang_err) + D_Yaw +I_ang
-    #print(str(int(Yaw*P_Y)) + " " + str(int(I_Yaw)) + " " + str(int(D_Yaw)))
+    # D_Yaw = (D_error - Yaw)
 
+    I_ang += ang_err * I_A
+    outyaw = (P_ER * ang_err)
+    D_Yaw = (D_error - ang_err) * D_Y
+    D_error = ang_err
+    outyaw = (P_ER * ang_err) + D_Yaw + I_ang
+    # print(str(int(Yaw*P_Y)) + " " + str(int(I_Yaw)) + " " + str(int(D_Yaw)))
 
     # Side
-    #print(int(sidedist+sidedist2)/2)
-    
-    error_side = -int(reqside - (sidedist+sidedist2)/2)
+    # print(int(sidedist+sidedist2)/2)
+
+    error_side = -int(reqside - (sidedist + sidedist2) / 2)
     I_Side += error_side * I_S
-    D_Side = (DS_error - error_side)*D_S
+    D_Side = (DS_error - error_side) * D_S
     DS_error = error_side
-    outSide = error_side*P_S + I_Side + D_Side
+    outSide = error_side * P_S + I_Side + D_Side
 
     # Front
     error_front = int(-(reqfront - frontdist))
-    I_Front += error_front * I_F 
-    D_Front = (DF_error - error_front)*D_F
+    I_Front += error_front * I_F
+    D_Front = (DF_error - error_front) * D_F
     DF_error = error_front
-    outfront = (error_front)*P_F + D_Front + I_Front
-    
-#    outSide = 0
-    #print(str(int(outyaw))+"  "+str(int(ang_err)))
-    #print(str(int(outyaw))+"  "+str(int(ang_err)))
+    outfront = (error_front) * P_F + D_Front + I_Front
 
-    #print(" " +str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
-    speedm1 = int(speed + rotate + side - outyaw + outSide + outfront + (speed * 0.0))
-    speedm2 = int(speed - rotate - side + outyaw - outSide + outfront + (speed * 0.0))
-    speedm3 = int(speed + rotate - side - outyaw - outSide + outfront + (speed * 0.0))
-    speedm4 = int(speed - rotate + side + outyaw + outSide + outfront + (speed * 0.0))
+    #    outSide = 0
+    # print(str(int(outyaw))+"  "+str(int(ang_err)))
+    # print(str(int(outyaw))+"  "+str(int(ang_err)))
+
+    print(" " +str(int(outyaw)) + " " + str(int(outSide)) + " " + str(int(outfront)))
+    speedm1 = int(speed + rotate + side - outyaw + outSide + outfront )#+ (speed * 0.0))
+    speedm2 = int(speed - rotate - side + outyaw - outSide + outfront )#+ (speed * 0.0))
+    speedm3 = int(speed + rotate - side - outyaw - outSide + outfront )#+ (speed * 0.0))
+    speedm4 = int(speed - rotate + side + outyaw + outSide + outfront )#+ (speed * 0.25))
     Speed = [speedm1, speedm2, speedm3, speedm4]
-   # print(Speed)
+    # print(Speed)
     i = 0
     for spd in Speed:
         if abs(spd) > 99:
@@ -271,26 +266,21 @@ def get_input():
     jsVal = js.getJS()
     speed = (jsVal['axis2']) * 70
     offsetyaw = -(jsVal['axis1']) * 50
-    side = -(jsVal['axis3']) * 50
- 
+    side = -(jsVal['axis3']) * 80
 
-    #print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
+    # print(str(speed)+" "+str(offsetyaw)+ " "+str(side)+" " + str(P_Y))
 
-    
+
 if __name__ == '__main__':
     motor_setup()
 
-
     while True:
-
         get_input()
-        #ir_read()
+        # ir_read()
         arduino_out()
         Com_Arduino()
         motor_feed(speed, offsetyaw, side)
         sleep(0.01)
-
-
 
 '''       try:
             get_input()
@@ -301,4 +291,4 @@ if __name__ == '__main__':
             #stop()
             print("Exception Errrorrrrrrrrrrrrrrrrrrrrrrrrrr ")
 '''
-#orange ylw grn blue purple white  
+# orange ylw grn blue purple white

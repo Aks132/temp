@@ -14,7 +14,7 @@ GPIO.output(2,GPIO.LOW)
 
 GPIO.output(3,GPIO.LOW)
 try:
-     ser2 = serial.Serial('/dev/ttyACM1', 115200, timeout=0.01)
+     ser2 = serial.Serial('/dev/ttyACM0', 115200, timeout=0.01)
      ser2.flush()
 except:
      print("/dev/tty Port issue")
@@ -31,7 +31,7 @@ def Com_Arduino():
         print("error")
         
      
- 
+
 
 if __name__ == '__main__':
    while True:
